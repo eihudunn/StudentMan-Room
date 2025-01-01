@@ -1,40 +1,39 @@
+package vn.edu.hust.studentman
+
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import vn.edu.hust.studentman.Student
-import vn.edu.hust.studentman.StudentDatabase
 
 class StudentViewModel(application: Application) : AndroidViewModel(application) {
     private val studentDao = StudentDatabase.getDatabase(application).studentDao()
     val students: LiveData<List<Student>> = studentDao.getAllStudents()
 
-    fun getStudentById(studentId: String): Student? {
-        return studentDao.getStudentById(studentId)
+    suspend fun getStudentById(studentId: String): Student? {
+        return withContext(Dispatchers.IO) {
+            studentDao.getStudentById(studentId)
+        }
     }
 
     fun addStudent(student: Student): Boolean {
-        var success = false
-        viewModelScope.launch {
-            success = studentDao.addStudent(student) > 0
+        viewModelScope.launch(Dispatchers.IO) {
+            studentDao.addStudent(student)
         }
-        return success
+        return true
     }
 
-    fun updateStudent(student: Student): Boolean {
-        var success = false
-        viewModelScope.launch {
-            success = studentDao.updateStudent(student) > 0
-        }
-        return success
+    fun updateStudent(student: Student) = viewModelScope.async(Dispatchers.IO) {
+        studentDao.updateStudent(student) > 0
     }
 
     fun deleteStudent(student: Student): Boolean {
-        var success = false
-        viewModelScope.launch {
-            success = studentDao.deleteStudent(student) > 0
+        viewModelScope.launch(Dispatchers.IO) {
+            studentDao.deleteStudent(student)
         }
-        return success
+        return true
     }
 }

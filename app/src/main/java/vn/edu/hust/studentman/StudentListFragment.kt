@@ -1,6 +1,5 @@
 package vn.edu.hust.studentman
 
-import StudentViewModel
 import android.os.Bundle
 import android.view.*
 import android.widget.*

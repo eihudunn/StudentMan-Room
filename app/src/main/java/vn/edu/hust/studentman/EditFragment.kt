@@ -1,6 +1,5 @@
 package vn.edu.hust.studentman
 
-import StudentViewModel
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,8 +9,10 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import kotlinx.coroutines.launch
 
 class EditFragment : Fragment() {
     private val args: EditFragmentArgs by navArgs()
@@ -32,23 +33,30 @@ class EditFragment : Fragment() {
         val studentIdEditText = view.findViewById<EditText>(R.id.et_student_id)
         val btnSaveChanges = view.findViewById<Button>(R.id.btn_save_changes)
         val studentId = args.studentId
-        studentViewModel.getStudentById(studentId)?.let { student ->
-            studentNameEditText.setText(student.studentName)
-            studentIdEditText.setText(student.studentId)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val student = studentViewModel.getStudentById(studentId)
+            student?.let {
+                studentNameEditText.setText(it.studentName)
+                studentIdEditText.setText(it.studentId)
+            }
         }
+
         btnSaveChanges.setOnClickListener {
             val name = studentNameEditText.text.toString()
             val id = studentIdEditText.text.toString()
 
             if (name.isNotEmpty() && id.isNotEmpty()) {
-                val success = studentViewModel.updateStudent(Student(name, id))
-                if (success) {
-                    Toast.makeText(context, "Cập nhật thành công", Toast.LENGTH_SHORT).show()
-                    findNavController().navigateUp()
-                } else {
-                    Toast.makeText(context, "Cập nhật thất bại", Toast.LENGTH_SHORT).show()
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val success = studentViewModel.updateStudent(Student(id, name)).await()
+                    if (success) {
+                        Toast.makeText(context, "Cập nhật thành công", Toast.LENGTH_SHORT).show()
+                        findNavController().navigateUp()
+                    } else {
+                        Toast.makeText(context, "Cập nhật thất bại", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            } else {
+                    } else {
                 Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show()
             }
         }
